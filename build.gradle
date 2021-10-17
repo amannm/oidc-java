@@ -1,0 +1,42 @@
+plugins {
+    id 'java'
+}
+
+group 'systems.cauldron'
+version '1.0-SNAPSHOT'
+
+sourceCompatibility = '17'
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
+dependencies {
+
+    implementation('org.glassfish:javax.json:1+')
+
+    // unit testing
+    testImplementation('org.junit.jupiter:junit-jupiter-api:5+')
+    testImplementation('org.junit.jupiter:junit-jupiter-params:5+')
+    testRuntimeOnly('org.junit.jupiter:junit-jupiter-engine:5+')
+
+}
+
+java {
+    modularity.inferModulePath = true
+}
+
+test {
+    useJUnitPlatform()
+}
+
+compileJava {
+    inputs.property('moduleName', 'systems.cauldron.oidc')
+    doFirst {
+        options.compilerArgs = [
+                '--module-path', classpath.asPath,
+        ]
+        classpath = files()
+    }
+}
