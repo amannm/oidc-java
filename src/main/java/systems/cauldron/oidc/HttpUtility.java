@@ -11,16 +11,14 @@ import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.concurrent.CompletableFuture;
 
-public class DiscoveryClient {
+public class HttpUtility {
 
-    private static final String DISCOVERY_PATH = "/.well-known/openid-configuration";
-
-    public static CompletableFuture<JsonObject> getAsync(String providerUrl) {
+    public static CompletableFuture<JsonObject> getJsonAsync(URI uri) {
         return HttpClient.newBuilder()
                 .connectTimeout(Duration.of(5L, ChronoUnit.SECONDS))
                 .build()
                 .sendAsync(HttpRequest.newBuilder()
-                        .uri(URI.create(providerUrl + DISCOVERY_PATH))
+                        .uri(uri)
                         .build(), HttpResponse.BodyHandlers.ofInputStream())
                 .thenApply(response -> {
                     int statusCode = response.statusCode();
@@ -32,4 +30,5 @@ public class DiscoveryClient {
                     }
                 });
     }
+
 }
