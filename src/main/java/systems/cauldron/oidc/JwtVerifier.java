@@ -7,26 +7,11 @@ import javax.json.JsonValue;
 import java.math.BigInteger;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
-import java.security.AlgorithmParameters;
-import java.security.KeyFactory;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.PublicKey;
-import java.security.Signature;
+import java.security.*;
 import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
-import java.security.spec.ECGenParameterSpec;
-import java.security.spec.ECParameterSpec;
-import java.security.spec.ECPoint;
-import java.security.spec.ECPublicKeySpec;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.InvalidParameterSpecException;
-import java.security.spec.RSAPublicKeySpec;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.security.spec.*;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -85,9 +70,24 @@ public class JwtVerifier {
                             case "PS256" -> verify(jwtParts, "SHA256withRSAandMGF1", getRsaPublicKey(jwk));
                             case "PS384" -> verify(jwtParts, "SHA384withRSAandMGF1", getRsaPublicKey(jwk));
                             case "PS512" -> verify(jwtParts, "SHA512withRSAandMGF1", getRsaPublicKey(jwk));
+                            case "EdDSA" -> {
+                                int encodedSignatureLength = jwtParts[2].length();
+                                yield switch (encodedSignatureLength) {
+                                    case 86 -> verify(jwtParts, "Ed25519", getEdDsaPublicKey(jwk));
+                                    case 19 -> verify(jwtParts, "Ed448", getEdDsaPublicKey(jwk));
+                                    default -> false;
+                                };
+                            }
                             default -> false;
                         }
                 );
+    }
+
+    private static boolean verify(String[] parts, String algorithm, PublicKey publicKey) {
+        byte[] header = parts[0].getBytes(StandardCharsets.UTF_8);
+        byte[] payload = parts[1].getBytes(StandardCharsets.UTF_8);
+        byte[] signature = parts[2].getBytes(StandardCharsets.UTF_8);
+        return verify(algorithm, publicKey, header, payload, signature);
     }
 
     private static boolean verify(String[] parts, String algorithm, RSAPublicKey publicKey) {
@@ -168,6 +168,14 @@ public class JwtVerifier {
                         default -> throw new UnsupportedOperationException("unsupported encoded HMAC size: " + encodedKeyLength);
                     };
                 }
+                case "OKP" -> {
+                    String crv = item.getString("crv");
+                    yield switch (crv) {
+                        case "Ed25519", "Ed448" -> "EdDSA";
+                        case "X25519", "X448" -> "ECDH-ES";
+                        default -> throw new UnsupportedOperationException("unsupported OKP curve: " + crv);
+                    };
+                }
                 default -> throw new UnsupportedOperationException("unsupported 'kty' value: " + kty);
             };
         }
@@ -184,6 +192,33 @@ public class JwtVerifier {
             throw new AssertionError(ex);
         } catch (InvalidKeySpecException ex) {
             throw new IllegalArgumentException("invalid RSA public key", ex);
+        }
+    }
+
+    private static PublicKey getEdDsaPublicKey(JsonObject item) {
+        byte[] pk = Base64.getUrlDecoder().decode(item.getString("x"));
+        boolean xOdd = false;
+        int lastbyteInt = pk[pk.length - 1];
+        if ((lastbyteInt & 255) >> 7 == 1) {
+            xOdd = true;
+        }
+        pk[pk.length - 1] &= 127;
+        for (int i = 0; i < pk.length / 2; i++) {
+            int x = pk.length - i - 1;
+            byte temp = pk[i];
+            pk[i] = pk[x];
+            pk[x] = temp;
+        }
+        BigInteger y = new BigInteger(1, pk);
+        try {
+            NamedParameterSpec paramSpec = new NamedParameterSpec("Ed25519");
+            EdECPublicKeySpec keySpec = new EdECPublicKeySpec(paramSpec, new EdECPoint(xOdd, y));
+            KeyFactory keyFactory = KeyFactory.getInstance("EdDSA");
+            return keyFactory.generatePublic(keySpec);
+        } catch (NoSuchAlgorithmException ex) {
+            throw new AssertionError(ex);
+        } catch (InvalidKeySpecException ex) {
+            throw new IllegalArgumentException("invalid EC public key", ex);
         }
     }
 
