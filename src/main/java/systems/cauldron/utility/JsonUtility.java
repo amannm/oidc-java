@@ -1,4 +1,4 @@
-package systems.cauldron.oidc;
+package systems.cauldron.utility;
 
 import javax.json.Json;
 import javax.json.JsonObject;
@@ -9,6 +9,12 @@ import java.nio.charset.StandardCharsets;
 import java.util.stream.Stream;
 
 public class JsonUtility {
+    public static JsonObject readJson(byte[] json) {
+        try (JsonReader reader = Json.createReader(new ByteArrayInputStream(json))) {
+            return reader.readObject();
+        }
+    }
+
     public static JsonObject readJson(String json) {
         try (JsonReader reader = Json.createReader(new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)))) {
             return reader.readObject();

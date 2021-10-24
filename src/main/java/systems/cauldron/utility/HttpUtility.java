@@ -1,4 +1,4 @@
-package systems.cauldron.oidc;
+package systems.cauldron.utility;
 
 import javax.json.Json;
 import javax.json.JsonObject;

@@ -1,5 +1,5 @@
 plugins {
-    id 'java'
+    id 'java-library'
 }
 
 group 'systems.cauldron'
@@ -14,7 +14,12 @@ repositories {
 
 dependencies {
 
+    // json processing
     implementation('org.glassfish:javax.json:1+')
+
+    // logging
+    implementation('org.apache.logging.log4j:log4j-api:2+')
+    implementation('org.apache.logging.log4j:log4j-core:2+')
 
     // unit testing
     testImplementation('org.junit.jupiter:junit-jupiter-api:5+')
@@ -25,18 +30,9 @@ dependencies {
 
 java {
     modularity.inferModulePath = true
+    withSourcesJar()
 }
 
 test {
     useJUnitPlatform()
-}
-
-compileJava {
-    inputs.property('moduleName', 'systems.cauldron.oidc')
-    doFirst {
-        options.compilerArgs = [
-                '--module-path', classpath.asPath,
-        ]
-        classpath = files()
-    }
 }
