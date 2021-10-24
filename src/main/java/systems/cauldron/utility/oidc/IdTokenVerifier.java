@@ -2,9 +2,9 @@ package systems.cauldron.utility.oidc;
 
 import systems.cauldron.utility.JsonUtility;
 import systems.cauldron.utility.jwt.Jwks;
+import systems.cauldron.utility.jwt.jws.JwksJwsVerifier;
 import systems.cauldron.utility.jwt.jws.Jws;
 import systems.cauldron.utility.jwt.jws.JwsAlgorithm;
-import systems.cauldron.utility.jwt.jws.JwsVerifier;
 
 import javax.json.JsonObject;
 import java.net.URI;
@@ -16,7 +16,7 @@ public class IdTokenVerifier {
 
     private final String clientId;
     private final JsonObject config;
-    private final JwsVerifier verifier;
+    private final JwksJwsVerifier verifier;
     private final EnumSet<JwsAlgorithm> keysForSigning;
 
     public IdTokenVerifier(JsonObject config, String clientId) {
@@ -24,7 +24,7 @@ public class IdTokenVerifier {
         this.config = config;
         URI jwksUri = URI.create(config.getString("jwks_uri"));
         Jwks jwks = new Jwks(jwksUri);
-        this.verifier = new JwsVerifier(jwks);
+        this.verifier = new JwksJwsVerifier(jwks);
         this.keysForSigning = EnumSet.noneOf(JwsAlgorithm.class);
         JsonUtility.streamArray(config, "id_token_signing_alg_values_supported")
                 .map(JwsAlgorithm::fromString)

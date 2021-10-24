@@ -4,7 +4,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Test;
 import systems.cauldron.utility.jwt.Jwks;
-import systems.cauldron.utility.jwt.jws.JwsVerifier;
+import systems.cauldron.utility.jwt.jws.JwksJwsVerifier;
 import systems.cauldron.utility.oidc.ConfigSource;
 
 import java.net.URI;
@@ -33,7 +33,7 @@ public class BasicTest {
                 "https://www.paypalobjects.com/",
                 "https://login.salesforce.com/"
         };
-        ConcurrentHashMap<URI, JwsVerifier> jwsVerifiers = new ConcurrentHashMap<>();
+        ConcurrentHashMap<URI, JwksJwsVerifier> jwsVerifiers = new ConcurrentHashMap<>();
         CompletableFuture.allOf(Stream.of(providers)
                         .parallel()
                         .map(URI::create)
@@ -42,7 +42,7 @@ public class BasicTest {
                                         .thenApply(config -> config.getString("jwks_uri"))
                                         .thenApply(URI::create)
                                         .thenApply(Jwks::new)
-                                        .thenApply(JwsVerifier::new)
+                                        .thenApply(JwksJwsVerifier::new)
                                         .thenCompose(verifier -> {
                                             jwsVerifiers.put(providerUri, verifier);
                                             return verifier.refresh();
