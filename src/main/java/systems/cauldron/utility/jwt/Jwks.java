@@ -17,11 +17,12 @@ public record Jwks(URI location) {
 
     public CompletableFuture<List<JsonObject>> load() {
         return HttpUtility.getJsonAsync(location)
-                .thenApply(jwksResponse -> jwksResponse.getJsonArray("keys"))
-                .thenApply(array -> {
-                    List<JsonObject> jwksResponse = array.stream().map(JsonValue::asJsonObject).collect(Collectors.toList());
-                    LOG.info("{} -> found {} keys", location, jwksResponse.size());
-                    return jwksResponse;
+                .thenApply(jwksResponse -> {
+                    List<JsonObject> result = jwksResponse.getJsonArray("keys").stream()
+                            .map(JsonValue::asJsonObject)
+                            .collect(Collectors.toList());
+                    LOG.info("{} -> found {} keys", location, result.size());
+                    return result;
                 });
     }
 }

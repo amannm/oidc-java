@@ -3,8 +3,9 @@ package systems.cauldron.utility;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Test;
+import systems.cauldron.utility.jwt.Jwks;
+import systems.cauldron.utility.jwt.jws.JwsVerifier;
 import systems.cauldron.utility.oidc.ConfigSource;
-import systems.cauldron.utility.oidc.IdTokenVerifier;
 
 import java.net.URI;
 import java.util.concurrent.CompletableFuture;
@@ -32,18 +33,22 @@ public class BasicTest {
                 "https://www.paypalobjects.com/",
                 "https://login.salesforce.com/"
         };
-        ConcurrentHashMap<URI, IdTokenVerifier> idTokenVerifiers = new ConcurrentHashMap<>();
+        ConcurrentHashMap<URI, JwsVerifier> jwsVerifiers = new ConcurrentHashMap<>();
         CompletableFuture.allOf(Stream.of(providers)
+                        .parallel()
                         .map(URI::create)
-                        .map(providerUri -> ConfigSource.getAsync(providerUri)
-                                .thenApply(IdTokenVerifier::new)
-                                .thenCompose(verifier -> {
-                                    idTokenVerifiers.put(providerUri, verifier);
-                                    return verifier.refresh();
-                                })
-                        )
+                        .map(providerUri ->
+                                ConfigSource.getAsync(providerUri)
+                                        .thenApply(config -> config.getString("jwks_uri"))
+                                        .thenApply(URI::create)
+                                        .thenApply(Jwks::new)
+                                        .thenApply(JwsVerifier::new)
+                                        .thenCompose(verifier -> {
+                                            jwsVerifiers.put(providerUri, verifier);
+                                            return verifier.refresh();
+                                        }))
                         .toArray(CompletableFuture[]::new))
                 .get(5L, TimeUnit.SECONDS);
-        assertEquals(providers.length, idTokenVerifiers.values().size());
+        assertEquals(providers.length, jwsVerifiers.values().size());
     }
 }
