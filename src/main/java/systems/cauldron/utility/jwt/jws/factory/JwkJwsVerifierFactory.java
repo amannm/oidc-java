@@ -7,7 +7,7 @@ import java.util.Collection;
 import java.util.Optional;
 
 abstract class JwkJwsVerifierFactory {
-    public abstract Collection<JwkJwsVerifier> build(JsonObject jwk);
+    abstract Collection<JwkJwsVerifier> build(JsonObject jwk);
 
     protected static Optional<String> getKeyIdResult(JsonObject jwk) {
         return jwk.containsKey("kid") ? Optional.of(jwk.getString("kid")) : Optional.empty();

@@ -23,7 +23,8 @@ import java.util.Optional;
 
 class EcJwkJwsVerifierFactory extends PublicKeyJwkJwsVerifierFactory {
 
-    public Collection<JwkJwsVerifier> build(JsonObject jwk) {
+    @Override
+    Collection<JwkJwsVerifier> build(JsonObject jwk) {
         String crv = jwk.getString("crv");
         byte[] x = Base64.getUrlDecoder().decode(jwk.getString("x"));
         byte[] y = Base64.getUrlDecoder().decode(jwk.getString("y"));
@@ -158,5 +159,4 @@ class EcJwkJwsVerifierFactory extends PublicKeyJwkJwsVerifierFactory {
         }
         return (bytes[fromIndex + padding] & 0xff) > 0x7f ? padding - 1 : padding;
     }
-
 }

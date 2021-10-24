@@ -14,7 +14,8 @@ import java.util.Optional;
 
 class HmacJwkJwsVerifierFactory extends SecretKeyJwkJwsVerifierFactory {
 
-    public Collection<JwkJwsVerifier> build(JsonObject jwk) {
+    @Override
+    Collection<JwkJwsVerifier> build(JsonObject jwk) {
         byte[] key = Base64.getUrlDecoder().decode(jwk.getString("k"));
         if (key.length < 32) {
             throw new UnsupportedOperationException("HMAC key under 32 bytes: " + key.length);

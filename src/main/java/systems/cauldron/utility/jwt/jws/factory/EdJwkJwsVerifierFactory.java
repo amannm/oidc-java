@@ -20,7 +20,8 @@ import java.util.Optional;
 
 class EdJwkJwsVerifierFactory extends PublicKeyJwkJwsVerifierFactory {
 
-    public Collection<JwkJwsVerifier> build(JsonObject jwk) {
+    @Override
+    Collection<JwkJwsVerifier> build(JsonObject jwk) {
         String crv = jwk.getString("crv");
         byte[] x = Base64.getUrlDecoder().decode(jwk.getString("x"));
         JwsAlgorithm alg;

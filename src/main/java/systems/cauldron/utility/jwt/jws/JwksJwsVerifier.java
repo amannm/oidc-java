@@ -4,7 +4,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import systems.cauldron.utility.JsonUtility;
 import systems.cauldron.utility.jwt.Jwks;
-import systems.cauldron.utility.jwt.jws.factory.JwkJwsVerifierFactories;
+import systems.cauldron.utility.jwt.jws.factory.JwkJwsVerifiers;
 
 import javax.json.JsonObject;
 import java.util.ArrayList;
@@ -65,17 +65,13 @@ public class JwksJwsVerifier {
                     return;
                 }
             }
-            JwkJwsVerifierFactories.process(jwk,
+            JwkJwsVerifiers.process(jwk,
                     verifier -> {
                         next.computeIfAbsent(verifier.getAlgorithm(), x -> new ArrayList<>()).add(verifier);
-                        LOG.info("{} -> registered {} key: alg={} kid={}", jwks.location(),
-                                verifier.getKeyType(),
-                                verifier.getAlgorithm(),
-                                verifier.getKeyId().orElse("None"));
+                        LOG.info("{} -> registered {} key: alg={} kid={}", jwks.location(), verifier.getKeyType(), verifier.getAlgorithm(), verifier.getKeyId().orElse("None"));
                     },
                     error -> {
-                        LOG.warn("{} -> {}", jwks.location(),
-                                error);
+                        LOG.warn("{} -> {}", jwks.location(), error);
                     });
         });
         verifiers.set(next);

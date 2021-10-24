@@ -19,7 +19,8 @@ import java.util.Optional;
 
 class RsaJwkJwsVerifierFactory extends PublicKeyJwkJwsVerifierFactory {
 
-    public Collection<JwkJwsVerifier> build(JsonObject jwk) {
+    @Override
+    Collection<JwkJwsVerifier> build(JsonObject jwk) {
         byte[] modulus = Base64.getUrlDecoder().decode(jwk.getString("n"));
         byte[] exponent = Base64.getUrlDecoder().decode(jwk.getString("e"));
         if (modulus.length < 256) {
