@@ -15,6 +15,11 @@ import java.util.Optional;
 class HmacJwkJwsVerifierFactory extends SecretKeyJwkJwsVerifierFactory {
 
     @Override
+    boolean validateShape(JsonObject jwk) {
+        return jwk.containsKey("k");
+    }
+
+    @Override
     Collection<JwkJwsVerifier> build(JsonObject jwk) {
         byte[] key = Base64.getUrlDecoder().decode(jwk.getString("k"));
         if (key.length < 32) {
@@ -22,20 +27,13 @@ class HmacJwkJwsVerifierFactory extends SecretKeyJwkJwsVerifierFactory {
         }
         if (jwk.containsKey("alg")) {
             String assertedAlg = jwk.getString("alg");
-            switch (assertedAlg) {
-                case "HS256" -> {
-                    return Collections.singleton(build(jwk, JwsAlgorithm.HS256, "HmacSHA256", key));
-                }
-                case "HS384" -> {
-                    return Collections.singleton(build(jwk, JwsAlgorithm.HS384, "HmacSHA384", key));
-                }
-                case "HS512" -> {
-                    return Collections.singleton(build(jwk, JwsAlgorithm.HS512, "HmacSHA512", key));
-                }
-                default -> {
-                    throw new UnsupportedOperationException("unsupported JWS algorithm: " + assertedAlg);
-                }
-            }
+            JwkJwsVerifier verifier = switch (assertedAlg) {
+                case "HS256" -> build(jwk, JwsAlgorithm.HS256, "HmacSHA256", key);
+                case "HS384" -> build(jwk, JwsAlgorithm.HS384, "HmacSHA384", key);
+                case "HS512" -> build(jwk, JwsAlgorithm.HS512, "HmacSHA512", key);
+                default -> throw new UnsupportedOperationException("unsupported JWS algorithm: " + assertedAlg);
+            };
+            return Collections.singleton(verifier);
         } else {
             List<JwkJwsVerifier> results = new ArrayList<>();
             results.add(build(jwk, JwsAlgorithm.HS256, "HmacSHA256", key));

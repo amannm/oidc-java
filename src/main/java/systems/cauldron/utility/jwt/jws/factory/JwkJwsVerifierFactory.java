@@ -7,6 +7,9 @@ import java.util.Collection;
 import java.util.Optional;
 
 abstract class JwkJwsVerifierFactory {
+
+    abstract boolean validateShape(JsonObject jwk);
+
     abstract Collection<JwkJwsVerifier> build(JsonObject jwk);
 
     protected static Optional<String> getKeyIdResult(JsonObject jwk) {

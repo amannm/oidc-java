@@ -20,6 +20,11 @@ import java.util.Optional;
 class RsaJwkJwsVerifierFactory extends PublicKeyJwkJwsVerifierFactory {
 
     @Override
+    boolean validateShape(JsonObject jwk) {
+        return jwk.containsKey("n") && jwk.containsKey("e") && !jwk.containsKey("d");
+    }
+
+    @Override
     Collection<JwkJwsVerifier> build(JsonObject jwk) {
         byte[] modulus = Base64.getUrlDecoder().decode(jwk.getString("n"));
         byte[] exponent = Base64.getUrlDecoder().decode(jwk.getString("e"));
@@ -28,29 +33,16 @@ class RsaJwkJwsVerifierFactory extends PublicKeyJwkJwsVerifierFactory {
         }
         if (jwk.containsKey("alg")) {
             String assertedAlg = jwk.getString("alg");
-            switch (assertedAlg) {
-                case "RS256" -> {
-                    return Collections.singleton(build(jwk, JwsAlgorithm.RS256, "SHA256withRSA", modulus, exponent));
-                }
-                case "RS384" -> {
-                    return Collections.singleton(build(jwk, JwsAlgorithm.RS384, "SHA384withRSA", modulus, exponent));
-                }
-                case "RS512" -> {
-                    return Collections.singleton(build(jwk, JwsAlgorithm.RS512, "SHA512withRSA", modulus, exponent));
-                }
-                case "PS256" -> {
-                    return Collections.singleton(build(jwk, JwsAlgorithm.PS256, "SHA256withRSA", modulus, exponent));
-                }
-                case "PS384" -> {
-                    return Collections.singleton(build(jwk, JwsAlgorithm.PS384, "SHA384withRSA", modulus, exponent));
-                }
-                case "PS512" -> {
-                    return Collections.singleton(build(jwk, JwsAlgorithm.PS512, "SHA512withRSA", modulus, exponent));
-                }
-                default -> {
-                    throw new UnsupportedOperationException("unsupported JWS algorithm: " + assertedAlg);
-                }
-            }
+            JwkJwsVerifier verifier = switch (assertedAlg) {
+                case "RS256" -> build(jwk, JwsAlgorithm.RS256, "SHA256withRSA", modulus, exponent);
+                case "RS384" -> build(jwk, JwsAlgorithm.RS384, "SHA384withRSA", modulus, exponent);
+                case "RS512" -> build(jwk, JwsAlgorithm.RS512, "SHA512withRSA", modulus, exponent);
+                case "PS256" -> build(jwk, JwsAlgorithm.PS256, "SHA256withRSAandMGF1", modulus, exponent);
+                case "PS384" -> build(jwk, JwsAlgorithm.PS384, "SHA384withRSAandMGF1", modulus, exponent);
+                case "PS512" -> build(jwk, JwsAlgorithm.PS512, "SHA512withRSAandMGF1", modulus, exponent);
+                default -> throw new UnsupportedOperationException("unsupported JWS algorithm: " + assertedAlg);
+            };
+            return Collections.singleton(verifier);
         } else {
             return List.of(
                     build(jwk, JwsAlgorithm.RS256, "SHA256withRSA", modulus, exponent),

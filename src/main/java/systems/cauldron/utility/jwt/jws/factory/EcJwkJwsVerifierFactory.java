@@ -24,6 +24,11 @@ import java.util.Optional;
 class EcJwkJwsVerifierFactory extends PublicKeyJwkJwsVerifierFactory {
 
     @Override
+    boolean validateShape(JsonObject jwk) {
+        return jwk.containsKey("crv") && jwk.containsKey("x") && jwk.containsKey("y") && !jwk.containsKey("d");
+    }
+
+    @Override
     Collection<JwkJwsVerifier> build(JsonObject jwk) {
         String crv = jwk.getString("crv");
         byte[] x = Base64.getUrlDecoder().decode(jwk.getString("x"));
@@ -52,9 +57,7 @@ class EcJwkJwsVerifierFactory extends PublicKeyJwkJwsVerifierFactory {
                 jcaCurve = "secp521r1";
                 componentSize = 66;
             }
-            default -> {
-                throw new UnsupportedOperationException("unsupported curve: " + crv);
-            }
+            default -> throw new UnsupportedOperationException("unsupported curve: " + crv);
         }
         ECPublicKey publicKey = getEcPublicKey(jcaCurve, x, y);
         Optional<String> idResult = getKeyIdResult(jwk);

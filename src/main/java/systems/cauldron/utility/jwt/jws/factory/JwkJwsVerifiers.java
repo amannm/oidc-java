@@ -15,33 +15,20 @@ public class JwkJwsVerifiers {
     public static void process(JsonObject jwk, Consumer<JwkJwsVerifier> onBuild, Consumer<String> onError) {
         String kty = jwk.getString("kty");
         switch (kty) {
-            case "RSA" -> {
-                boolean validShape = jwk.containsKey("n") && jwk.containsKey("e") && !jwk.containsKey("d");
-                processKeyType(kty, jwk, validShape, JwkJwsVerifiers.RSA, onBuild, onError);
-            }
-            case "EC" -> {
-                boolean validShape = jwk.containsKey("crv") && jwk.containsKey("x") && jwk.containsKey("y") && !jwk.containsKey("d");
-                processKeyType(kty, jwk, validShape, JwkJwsVerifiers.EC, onBuild, onError);
-            }
-            case "oct" -> {
-                boolean validShape = jwk.containsKey("k");
-                processKeyType(kty, jwk, validShape, JwkJwsVerifiers.HMAC, onBuild, onError);
-            }
-            case "OKP" -> {
-                boolean validShape = jwk.containsKey("crv") && jwk.containsKey("x") && !jwk.containsKey("d");
-                processKeyType(kty, jwk, validShape, JwkJwsVerifiers.Ed, onBuild, onError);
-            }
+            case "RSA" -> processKeyType(kty, jwk, JwkJwsVerifiers.RSA, onBuild, onError);
+            case "EC" -> processKeyType(kty, jwk, JwkJwsVerifiers.EC, onBuild, onError);
+            case "oct" -> processKeyType(kty, jwk, JwkJwsVerifiers.HMAC, onBuild, onError);
+            case "OKP" -> processKeyType(kty, jwk, JwkJwsVerifiers.Ed, onBuild, onError);
             default -> onError.accept(String.format("unknown family: %s", kty));
         }
     }
 
     private static void processKeyType(String kty,
                                        JsonObject jwk,
-                                       boolean validShape,
                                        JwkJwsVerifierFactory verifierFactory,
                                        Consumer<JwkJwsVerifier> onBuild,
                                        Consumer<String> onError) {
-        if (validShape) {
+        if (verifierFactory.validateShape(jwk)) {
             try {
                 verifierFactory.build(jwk).forEach(onBuild);
             } catch (Exception ex) {
