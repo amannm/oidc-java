@@ -8,6 +8,7 @@ import javax.json.JsonObject;
 import java.net.URI;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -61,10 +62,13 @@ public class InitialTokenSession {
                 "redirect_uri", clientConfig.redirectUri(),
                 "grant_type", "authorization_code"
         )).thenAccept(jsonObject -> {
+            if (!"bearer".equalsIgnoreCase(jsonObject.getString("token_type"))) {
+                throw new IllegalArgumentException("unexpected token type");
+            }
             TokenState nextTokenState = new TokenState(
                     jsonObject.getString("access_token"),
                     Instant.now().minus(jsonObject.getJsonNumber("expires_in").longValue(), ChronoUnit.SECONDS),
-                    Stream.of(jsonObject.getString("scope").split(" ")).collect(Collectors.toSet()),
+                    jsonObject.containsKey("scope") ? Stream.of(jsonObject.getString("scope").split(" ")).collect(Collectors.toSet()) : Collections.emptySet(),
                     jsonObject.getString("id_token"),
                     jsonObject.containsKey("refresh_token") ? jsonObject.getString("refresh_token") : null
             );
